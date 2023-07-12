@@ -62,6 +62,20 @@ app.post('/register', jsonParser , function (req, res, next) {
           res.json({status: 'error' , decoded ,message: err.message})
         }    
           })
+  
+          app.post('/register_patient', jsonParser , function (req, res, next) {
+            connection.execute(
+                'INSERT INTO patient (patient_fname , patient_lname , patient_HN , patient_status) VALUES (?,?,?,?)',
+                [req.body.patient_fname , req.body.patient_lname , req.body.patient_HN , req.body.patient_status],
+                function(err, results, fields) {
+                  if(err) {
+                    res.json({status: 'error', message: 'err'})
+                    return
+                  }
+                  res.json({status: 'ok'})
+                }
+                );
+            })
 
 app.listen(7000, function () {
     console.log('CORS-enabled web server listening on port 7000')
