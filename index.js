@@ -42,8 +42,8 @@ app.post('/register', jsonParser , function (req, res, next) {
               if(assessor.length == 0) {res.json({status: 'error', message: 'no user found'}); return }
               bcrypt.compare(req.body.assessor_password, assessor[0].assessor_password, function(err, isLogin) {
                 if(isLogin){
-                  var token = jwt.sign({assessor_username: assessor[0].assessor_username , assessor_fname : assessor[0].assessor_fname }, secret, { expiresIn: '1h' });
-                  res.json({status: 'ok', message: 'login success' , assessor_fname: assessor[0].assessor_fname , assessor_lname: assessor[0].assessor_lname , token})
+                  var token = jwt.sign({assessor_username: assessor[0].assessor_username , assessor_fname : assessor[0].assessor_fname , assessor_lname : assessor[0].assessor_lname }, secret, { expiresIn: '1h' });
+                  res.json({status: 'ok', message: 'login success' , token})
                 } else {
                   res.json({status: 'error', message: 'login failed'})
                 }
