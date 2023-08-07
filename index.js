@@ -71,9 +71,12 @@ app.post('/register', jsonParser , function (req, res, next) {
                   if(err) {
                     res.json({status: 'error', message: 'err'})
                     return
-                  }
+                  }else if(req.body.patient_HN.length < 8 || req.body.patient_HN.length > 8){
+                    res.json({status: 'length error' , message: 'HN number must be at 8 int!'})
+                    return
+                  }else {
                   res.json({status: 'ok'})
-                }
+                }}
                 );
             })
 
