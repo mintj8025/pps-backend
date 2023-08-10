@@ -64,6 +64,7 @@ app.post('/register', jsonParser , function (req, res, next) {
           })
 
           app.post('/register_patient', jsonParser , function (req, res, next) {
+            let errors = [];
             connection.execute(
                 'INSERT INTO patient (patient_fname , patient_lname , patient_HN , patient_status) VALUES (?,?,?,?)',
                 [req.body.patient_fname , req.body.patient_lname , req.body.patient_HN , req.body.patient_status],
@@ -71,7 +72,10 @@ app.post('/register', jsonParser , function (req, res, next) {
                   if(err) {
                     res.json({status: 'error', message: 'err'})
                     return
-                  }else {
+                  }if(req.body.patient_fname.length === 0){
+                    res.json({status: 'error', message: 'fname err'})
+                    return
+                  }else{
                   res.json({status: 'ok'})
                 }}
                 );
