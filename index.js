@@ -8,10 +8,12 @@ var jsonParser = bodyParser.json()
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
 const secret = 'fullstack-login'
+const secret2 = 'fullstack-patientFound'
 require('dotenv').config()
 
 var jwt = require('jsonwebtoken');
 var token = jwt.sign({ foo: 'bar' }, 'shhhhh');
+var token2 = jwt.sign({ foo: 'bar' }, 'shhhhh');
 
 app.use(cors())
 
@@ -79,6 +81,34 @@ app.post('/register', jsonParser , function (req, res, next) {
                 }}
                 );
             })
+
+            app.post('/patientFound', jsonParser , function (req, res, next) {
+              connection.execute(
+                  'SELECT * FROM patient WHERE patient_HN=?' ,
+                  [req.body.patient_HN],
+                  function(err, patient, fields) {
+                    if(err) {res.json({status: 'error', message: 'err'}); return }
+                    if(patient.length == 0) {res.json({status: 'error', message: 'no user found'}); return }
+                    if(req.body.patient_HN == patient[0].patient_HN) {
+                        var token2 = jwt.sign({patient_fname: patient[0].patient_fname , patient_lname : patient[0].patient_lname , patient_visit : patient[0].patient_visit} , secret2);
+                        res.json({status: 'ok', message: 'Found!' , token2})
+                      } else {
+                        res.json({status: 'error', message: 'Not Found!'})
+                      }
+                    });
+                  }
+                );
+        
+                app.post('/patientAuthen', jsonParser , function (req, res, next) {
+                  try{
+                      const token2 = req.headers.authorization.split(' ')[1]
+                      var decoded2 = jwt.verify(token2 , secret2);
+                      res.json({status: 'ok' , decoded2})
+                  
+                  } catch(err) {
+                    res.json({status: 'error' , decoded2 ,message: err.message})
+                  }    
+                    })
 
 app.listen(7000, function () {
     console.log('CORS-enabled web server listening on port 7000')
