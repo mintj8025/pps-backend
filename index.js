@@ -90,7 +90,7 @@ app.post('/register', jsonParser , function (req, res, next) {
                     if(err) {res.json({status: 'error', message: 'err'}); return }
                     if(patient.length == 0) {res.json({status: 'error', message: 'no user found'}); return }
                     if(req.body.patient_HN == patient[0].patient_HN) {
-                        var token2 = jwt.sign({patient_fname: patient[0].patient_fname , patient_lname : patient[0].patient_lname , patient_visit : patient[0].patient_visit} , secret2);
+                        var token2 = jwt.sign({patient_HN: patient[0].patient_HN ,patient_fname: patient[0].patient_fname , patient_lname : patient[0].patient_lname , patient_visit : patient[0].patient_visit , patient_status : patient[0].patient_status} , secret2);
                         res.json({status: 'ok', message: 'Found!' , token2})
                       } else {
                         res.json({status: 'error', message: 'Not Found!'})
