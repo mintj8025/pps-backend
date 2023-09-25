@@ -44,7 +44,7 @@ app.post('/register', jsonParser , function (req, res, next) {
               if(assessor.length == 0) {res.json({status: 'error', message: 'no user found'}); return }
               bcrypt.compare(req.body.assessor_password, assessor[0].assessor_password, function(err, isLogin) {
                 if(isLogin){
-                  var token = jwt.sign({assessor_username: assessor[0].assessor_username , assessor_fname : assessor[0].assessor_fname , assessor_lname : assessor[0].assessor_lname }, secret, { expiresIn: '1h' });
+                  var token = jwt.sign({assessor_username: assessor[0].assessor_username , assessor_fname : assessor[0].assessor_fname , assessor_lname : assessor[0].assessor_lname }, secret, { expiresIn: '4h' });
                   res.json({status: 'ok', message: 'login success' , token})
                 } else {
                   res.json({status: 'error', message: 'login failed'})
@@ -113,14 +113,14 @@ app.post('/register', jsonParser , function (req, res, next) {
                     var pps = bpi;
 
                     var currentDate = new Date();
-                    var formattedDate = currentDate.toISOString().slice(0, 10); // จัดรูปแบบให้เป็น 'YYYY-MM-DD'
+                    var formattedDate = currentDate.toISOString().slice(0, 10);
                     var date_of_first = formattedDate;
-                    var duration = 1; // ค่า duration ที่คุณต้องการ
+                    var duration = 1; 
 
                     connection.execute(
                       'INSERT INTO assessment (date, patient_fname, patient_lname, patient_HN, patient_status, patient_visit, assessment_status, nrs, activity, emotion, walk, work, relationship, sleep, happy, satisfied, bpi, pps, ss, nv, sfi72, date_of_first, duration, assessor_fname, assessor_lname) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                       [
-                        formattedDate, // ใช้ค่าวันที่ปัจจุบันที่จะบันทึก
+                        formattedDate,
                         req.body.patient_fname,
                         req.body.patient_lname,
                         req.body.patient_HN,
@@ -141,8 +141,8 @@ app.post('/register', jsonParser , function (req, res, next) {
                         req.body.ss,
                         req.body.nv,
                         req.body.sfi72,
-                        date_of_first, // ใช้ค่า date_of_first ที่ถูกตรวจสอบแล้ว
-                        duration, // ใช้ค่า duration ที่คำนวณได้
+                        date_of_first, 
+                        duration,
                         req.body.assessor_fname,
                         req.body.assessor_lname
                       ],
@@ -165,7 +165,7 @@ app.post('/register', jsonParser , function (req, res, next) {
    
                   app.get('/history', jsonParser, function (req, res, next) {
                   connection.execute(
-                      'SELECT date, patient_HN, patient_status, patient_visit, nrs, activity, emotion, walk, work, relationship, sleep, happy, bpi, pps, ss, nv, sfi72, date_of_first, duration FROM assessment',
+                      'SELECT date, patient_HN, patient_fname, patient_lname, patient_status, patient_visit, nrs, activity, emotion, walk, work, relationship, sleep, happy, bpi, pps, ss, nv, sfi72, date_of_first, duration, assessor_fname, assessor_lname FROM assessment',
                       function(err, results, fields) {
                         if (err) {
                           res.json({status: 'error', message: 'err'}); 
