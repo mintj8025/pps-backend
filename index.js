@@ -165,7 +165,7 @@ app.post('/register', jsonParser , function (req, res, next) {
    
                   app.get('/history', jsonParser, function (req, res, next) {
                   connection.execute(
-                      'SELECT date, patient_HN, patient_fname, patient_lname, patient_status, patient_visit, nrs, activity, emotion, walk, work, relationship, sleep, happy, bpi, pps, ss, nv, sfi72, date_of_first, duration, assessor_fname, assessor_lname FROM assessment',
+                      'SELECT date, patient_HN, patient_fname, patient_lname, patient_status, patient_visit, assessment_status, nrs, activity, emotion, walk, work, relationship, sleep, happy, satisfied, bpi, pps, ss, nv, sfi72, date_of_first, duration, assessor_fname, assessor_lname FROM assessment',
                       function(err, results, fields) {
                         if (err) {
                           res.json({status: 'error', message: 'err'}); 
