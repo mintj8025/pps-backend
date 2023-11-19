@@ -134,7 +134,7 @@ app.post('/register', jsonParser , function (req, res, next) {
             var eating = req.body.eating;
             var awareness = req.body.awareness;
           
-            if (movement === "เคลื่อนไหวปกติ") {
+          if (movement === "เคลื่อนไหวปกติ") {
               pps100++;
               pps90++;
               pps80++;
@@ -220,6 +220,7 @@ app.post('/register', jsonParser , function (req, res, next) {
               pps10++;
             }
 
+
             var maxPps = Math.max(pps100, pps90, pps80, pps70, pps60, pps50, pps40, pps30, pps20, pps10);
             console.log("maxPps:", maxPps);
 
@@ -249,8 +250,61 @@ app.post('/register', jsonParser , function (req, res, next) {
             var bpi = parseInt(req.body.activity) + parseInt(req.body.emotion) + parseInt(req.body.walk) + parseInt(req.body.work) + parseInt(req.body.relationship) + parseInt(req.body.sleep) + parseInt(req.body.happy);          
             var currentDate = new Date();
             var formattedDate = currentDate.toISOString().slice(0, 10);
-            var date_of_first = formattedDate;
-            var duration = 1;
+            var dateOfFirst = new Date(req.body.date_of_first); 
+            console.log("req.body.date_of_first:", req.body.date_of_first);
+            console.log("dateOfFirst:", dateOfFirst);
+            var dateOfFirstResult = req.body.patient_visit === 0 ? formattedDate : dateOfFirst;
+
+            // คำนวณ duration หรือจำนวนวันระหว่าง formattedDate กับ dateOfFirstResult
+            var duration = calculateDuration(formattedDate, dateOfFirstResult);
+
+            // ...
+
+            function calculateDuration(endDate, startDate) {
+              // แปลงวันที่เป็นวินาที
+              var endDateInSeconds = new Date(endDate).getTime();
+              var startDateInSeconds = new Date(startDate).getTime();
+
+              // หาความแตกต่างระหว่างวันที่เป็นวินาที
+              var timeDifferenceInSeconds = endDateInSeconds - startDateInSeconds;
+
+              // แปลงวินาทีเป็นวัน
+              var duration = timeDifferenceInSeconds / (1000 * 60 * 60 * 24);
+
+              // ปัดเศษทิ้ง
+              return Math.floor(duration);
+            }
+            
+            var patientVisit = parseInt(req.body.patient_visit) + 1;
+
+            const patientHN = req.body.patient_HN;
+
+            var patientStatus = req.body.patient_status;
+            if (patientVisit > 1 && patientStatus !== "old") {
+                patientStatus = "old";
+        
+                connection.execute(
+                    'UPDATE patient SET patient_status = ? WHERE patient_HN = ?',
+                    [patientStatus, patientHN],
+                    function (err, updateStatusResult, fields) {
+                        if (err) {
+                            console.error(err);
+                            return res.json({ status: 'error', message: 'Failed to update patient status' });
+                        }
+                    }
+                );
+            }
+
+            // Update patient_visit and date in the patient table
+            connection.execute(
+                'UPDATE patient SET patient_visit = ?, date = ?, date_of_first = ? WHERE patient_HN = ?',
+                [patientVisit, formattedDate, dateOfFirstResult, patientHN],
+                function (err, updateResult, fields) {
+                    if (err) {
+                        console.error(err);
+                        return res.json({ status: 'error', message: 'Failed to update patient details' });
+                    }
+
           
             connection.execute(
               'INSERT INTO assessment (date, patient_HN, patient_fname, patient_lname, patient_status, patient_visit, nrs, activity, emotion, walk, work, relationship, sleep, happy, satisfied, bpi, movement, activityAndDisease, dailyRoutines, eating, awareness, pps, ss, nv, sfi72, date_of_first, duration, assessor_fname, assessor_lname, assessment_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
@@ -259,8 +313,8 @@ app.post('/register', jsonParser , function (req, res, next) {
                 req.body.patient_HN,
                 req.body.patient_fname,
                 req.body.patient_lname,
-                req.body.patient_status,
-                req.body.patient_visit,
+                patientStatus,
+                patientVisit,
                 req.body.nrs,
                 req.body.activity,
                 req.body.emotion,
@@ -280,7 +334,7 @@ app.post('/register', jsonParser , function (req, res, next) {
                 req.body.ss,
                 req.body.nv,
                 req.body.sfi72,
-                date_of_first,
+                dateOfFirstResult,
                 duration,
                 req.body.assessor_fname,
                 req.body.assessor_lname,
@@ -312,12 +366,13 @@ app.post('/register', jsonParser , function (req, res, next) {
                       res.json({ status: 'pps20'});
                   }else if (pps === 10){
                       res.json({ status: 'pps10'});
+                    }
                   }
                 }
-              }
-            );
-          });
-          
+              );
+            }
+          );
+        });
 
 
     app.post('/patientAuthen', jsonParser , function (req, res, next) {
@@ -372,7 +427,8 @@ app.post('/register', jsonParser , function (req, res, next) {
             patient_fname: patients[0].patient_fname,
             patient_lname: patients[0].patient_lname,
             patient_visit: patients[0].patient_visit,
-            patient_status: patients[0].patient_status
+            patient_status: patients[0].patient_status,
+            date_of_first: patients[0].date_of_first
           }, secret2);
        
           // ส่งค่า token2 กลับไปในการตอบสนอ
@@ -405,7 +461,8 @@ app.post('/register', jsonParser , function (req, res, next) {
             patient_fname: patients[0].patient_fname,
             patient_lname: patients[0].patient_lname,
             patient_visit: patients[0].patient_visit,
-            patient_status: patients[0].patient_status
+            patient_status: patients[0].patient_status,
+            date_of_first: patients[0].date_of_first
           }, secret2);
              
           // ส่งค่า token2 กลับในการตอบสนอ
