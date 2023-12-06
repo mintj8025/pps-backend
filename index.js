@@ -11,6 +11,7 @@ const secret = 'fullstack-login'
 const secret2 = 'fullstack-patientFound'
 require('dotenv').config()
 
+
 var jwt = require('jsonwebtoken');
 var token = jwt.sign({ foo: 'bar' }, 'shhhhh');
 var token2 = jwt.sign({ foo: 'bar' }, 'shhhhh');
@@ -79,7 +80,6 @@ app.post('/register', jsonParser , function (req, res, next) {
 
     app.post('/register_patient', jsonParser, function (req, res, next) {
             const patientHN = req.body.patient_HN;
-            
             // ตรวจสอบว่า patient_HN เป็นตัวเลข 8 ตัวเท่านั้น
             if (!/^[0-9]{8}$/.test(patientHN)) {
               return res.json({ status: 'error', message: 'HN ไม่ถูกต้อง' });
@@ -99,9 +99,11 @@ app.post('/register', jsonParser , function (req, res, next) {
                   } else {
                     // เลข HN ไม่ซ้ำ สามารถดำเนินการ INSERT ข้อมูลได้
                     const newPatientStatus = 'new'; // กำหนดค่า patient_status เป็น 'new'
+                    const patientVisit = 0;
+                    const patientDuration = 0;
                     connection.execute(
-                      'INSERT INTO patient (patient_fname, patient_lname, patient_HN, patient_status, patient_visit) VALUES (?,?,?,?,?)',
-                      [req.body.patient_fname, req.body.patient_lname, patientHN, newPatientStatus, req.body.patient_visit],
+                      'INSERT INTO patient (patient_fname, patient_lname, patient_HN, patient_status, patient_visit, duration) VALUES (?,?,?,?,?,?)',
+                      [req.body.patient_fname, req.body.patient_lname, patientHN, newPatientStatus, patientVisit, patientDuration],
                       function (err, results, fields) {
                         if (err) {
                           res.json({ status: 'error', message: 'เกิดข้อผิดพลาดในการบันทึกข้อมูล' });
@@ -297,13 +299,13 @@ app.post('/register', jsonParser , function (req, res, next) {
 
             // Update patient_visit and date in the patient table
             connection.execute(
-                'UPDATE patient SET patient_visit = ?, date = ?, date_of_first = ? WHERE patient_HN = ?',
-                [patientVisit, formattedDate, dateOfFirstResult, patientHN],
-                function (err, updateResult, fields) {
-                    if (err) {
-                        console.error(err);
-                        return res.json({ status: 'error', message: 'Failed to update patient details' });
-                    }
+              'UPDATE patient SET patient_visit = ?, date = ?, date_of_first = ?, duration = ? WHERE patient_HN = ?',
+              [patientVisit, formattedDate, dateOfFirstResult, duration, patientHN],
+              function (err, updateResult, fields) {
+                if (err) {
+                  console.error(err);
+                  return res.json({ status: 'error', message: 'Failed to update patient details' });
+                }
 
           
             connection.execute(
@@ -428,7 +430,8 @@ app.post('/register', jsonParser , function (req, res, next) {
             patient_lname: patients[0].patient_lname,
             patient_visit: patients[0].patient_visit,
             patient_status: patients[0].patient_status,
-            date_of_first: patients[0].date_of_first
+            date_of_first: patients[0].date_of_first,
+            duration: patients[0].duration
           }, secret2);
        
           // ส่งค่า token2 กลับไปในการตอบสนอ
@@ -462,7 +465,9 @@ app.post('/register', jsonParser , function (req, res, next) {
             patient_lname: patients[0].patient_lname,
             patient_visit: patients[0].patient_visit,
             patient_status: patients[0].patient_status,
-            date_of_first: patients[0].date_of_first
+            date: patients[0].date,
+            date_of_first: patients[0].date_of_first,
+            duration: patients[0].duration
           }, secret2);
              
           // ส่งค่า token2 กลับในการตอบสนอ
@@ -486,7 +491,72 @@ app.post('/register', jsonParser , function (req, res, next) {
                       }
                     );
                   });
+
+                const getPatientInfo = (req, res) => {
+                connection.execute(
+                  'SELECT patient_fname, patient_lname, patient_HN, patient_status, patient_visit, date, date_of_first, duration FROM patient',
+                  function (err, results, fields) {
+                    if (err) {
+                      res.json({ status: 'error', message: 'err' });
+                      return;
+                    } else {
+                      res.json({ results: results });
+                    }
+                  }
+                );
+              };
+
+              const PatientModel = {
+                async updatePatientStatus(patient_HN, newStatus) {
+                  try {
+                    const [result] = await connection.execute(
+                      'UPDATE patients SET patient_status = ? WHERE patient_HN = ?',
+                      [newStatus, patient_HN]
+                    );
+              
+                    if (result.changedRows > 0) {
+                      return { status: 'ok', message: 'Treatment has been canceled.' };
+                    } else {
+                      return { status: 'error', message: 'Patient not found or already canceled.' };
+                    }
+                  } catch (error) {
+                    console.error('Error updating patient status:', error);
+                    throw error;
+                  }
+                },
+              };
+              
+              module.exports = PatientModel;
+
+              const cancelTreatment = async (req, res) => {
+                const { patient_HN } = req.params;
+
+                // Assuming you have a database update logic here
+                try {
+                  // Perform the update in your database based on patient_HN
+                  // Update the patient_status to 'Cancelled Treatment'
                   
+                  // Example using Mongoose (adjust according to your database library)
+                  const result = await PatientModel.updateOne({ patient_HN }, { patient_status: 'Cancelled Treatment' });
+              
+                  if (result.nModified > 0) {
+                    // Update successful
+                    res.json({ status: 'ok', message: 'Treatment has been canceled.' });
+                  } else {
+                    // No records were modified (patient not found, or already canceled)
+                    res.status(404).json({ status: 'error', message: 'Patient not found or already canceled.' });
+                  }
+                } catch (error) {
+                  console.error('Error canceling treatment:', error);
+                  res.status(500).json({ status: 'error', message: 'Internal server error.' });
+                }
+              };
+              
+
+              // ใช้ middleware jsonParser ทั้งสองรายการ
+              app.get('/patient_info', jsonParser, getPatientInfo);
+              app.put('/cancel_treatment/:patient_HN', jsonParser, cancelTreatment);
+
               
 
 app.listen(7000, function () {
