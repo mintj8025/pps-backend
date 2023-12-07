@@ -506,52 +506,29 @@ app.post('/register', jsonParser , function (req, res, next) {
                 );
               };
 
-              const PatientModel = {
-                async updatePatientStatus(patient_HN, newStatus) {
-                  try {
-                    const [result] = await connection.execute(
-                      'UPDATE patients SET patient_status = ? WHERE patient_HN = ?',
-                      [newStatus, patient_HN]
-                    );
-              
-                    if (result.changedRows > 0) {
-                      return { status: 'ok', message: 'Treatment has been canceled.' };
-                    } else {
-                      return { status: 'error', message: 'Patient not found or already canceled.' };
-                    }
-                  } catch (error) {
-                    console.error('Error updating patient status:', error);
-                    throw error;
-                  }
-                },
-              };
-              
-              module.exports = PatientModel;
-
-              const cancelTreatment = async (req, res) => {
+              const cancelTreatment = (req, res) => {
                 const { patient_HN } = req.params;
+                const { patient_status } = req.body;
+                console.log(patient_HN)
+                console.log(patient_status)
+                
+                connection.execute(
+                  'UPDATE patient SET patient_status = ? WHERE patient_HN = ?',
+                  [patient_status, patient_HN],
+                  function (err, updateStatusResult, fields) {
+                      if (err) {
+                          console.error(err);
+                          return res.json({ status: 'error', message: 'Failed to update patient status' });
+                      }
+                      res.json({ status: 'ok', message: `Cancelled treatment for patient HN ${patient_HN}` });
 
-                // Assuming you have a database update logic here
-                try {
-                  // Perform the update in your database based on patient_HN
-                  // Update the patient_status to 'Cancelled Treatment'
-                  
-                  // Example using Mongoose (adjust according to your database library)
-                  const result = await PatientModel.updateOne({ patient_HN }, { patient_status: 'Cancelled Treatment' });
-              
-                  if (result.nModified > 0) {
-                    // Update successful
-                    res.json({ status: 'ok', message: 'Treatment has been canceled.' });
-                  } else {
-                    // No records were modified (patient not found, or already canceled)
-                    res.status(404).json({ status: 'error', message: 'Patient not found or already canceled.' });
                   }
-                } catch (error) {
-                  console.error('Error canceling treatment:', error);
-                  res.status(500).json({ status: 'error', message: 'Internal server error.' });
-                }
-              };
-              
+              );
+
+              }
+            
+
+  
 
               // ใช้ middleware jsonParser ทั้งสองรายการ
               app.get('/patient_info', jsonParser, getPatientInfo);
