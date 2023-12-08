@@ -509,8 +509,6 @@ app.post('/register', jsonParser , function (req, res, next) {
               const cancelTreatment = (req, res) => {
                 const { patient_HN } = req.params;
                 const { patient_status } = req.body;
-                console.log(patient_HN)
-                console.log(patient_status)
                 
                 connection.execute(
                   'UPDATE patient SET patient_status = ? WHERE patient_HN = ?',
