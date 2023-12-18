@@ -260,7 +260,6 @@ app.post('/register', jsonParser , function (req, res, next) {
             // คำนวณ duration หรือจำนวนวันระหว่าง formattedDate กับ dateOfFirstResult
             var duration = calculateDuration(formattedDate, dateOfFirstResult);
 
-            // ...
 
             function calculateDuration(endDate, startDate) {
               // แปลงวันที่เป็นวินาที
@@ -416,7 +415,7 @@ app.post('/register', jsonParser , function (req, res, next) {
         [searchTerm],
         function (err, patients, fields) {
           if (err) {
-            console.error(err); // Log the database error for debugging
+            console.error(err); 
             return res.status(500).json({ status: 'error', message: 'Database error' });
           }
     
@@ -434,7 +433,6 @@ app.post('/register', jsonParser , function (req, res, next) {
             duration: patients[0].duration
           }, secret2);
        
-          // ส่งค่า token2 กลับไปในการตอบสนอ
           res.json({ status: 'ok', message: 'Found!', token2: token2 , results: patients });
         }
       );
@@ -523,17 +521,31 @@ app.post('/register', jsonParser , function (req, res, next) {
                   }
               );
 
+              const updateAssessmentStatus = (req, res) =>{
+                  const { rowId, assessment_status } = req.body;
+
+                  connection.execute(
+                    'UPDATE assessment SET assessment_status = ? WHERE assessment_id = ?',
+                    [assessment_status, rowId],
+                    function (err, updateStatusResult, fields) {
+                        if (err) {
+                            console.error(err);
+                            return res.json({ status: 'error', message: 'Row not found' });
+                        }
+                        res.json({ status: 'ok', message: `Assessment status updated successfully.` });
+  
+                    }
+                );  
+              }
+
               }
             
 
   
 
-              // ใช้ middleware jsonParser ทั้งสองรายการ
               app.get('/patient_info', jsonParser, getPatientInfo);
               app.put('/cancel_treatment/:patient_HN', jsonParser, cancelTreatment);
-
               
-
 app.listen(7000, function () {
     console.log('CORS-enabled web server listening on port 7000')
   })
