@@ -55,7 +55,7 @@ app.post('/register', jsonParser , function (req, res, next) {
                           assessor_username: assessor[0].assessor_username,
                           assessor_fname: assessor[0].assessor_fname,
                           assessor_lname: assessor[0].assessor_lname
-                      }, secret, { expiresIn: '4h' });
+                      }, secret, { expiresIn: '2h' });
                       res.json({ status: 'ok', message: 'Login success', token });
                   } else {
                       res.json({ status: 'error', message: 'Login failed' });
@@ -98,7 +98,7 @@ app.post('/register', jsonParser , function (req, res, next) {
                     res.json({ status: 'error', message: 'เลข HN นี้มีอยู่ในระบบแล้ว' });
                   } else {
                     // เลข HN ไม่ซ้ำ สามารถดำเนินการ INSERT ข้อมูลได้
-                    const newPatientStatus = 'new'; // กำหนดค่า patient_status เป็น 'new'
+                    const newPatientStatus = 'new'; 
                     const patientVisit = 0;
                     const patientDuration = 0;
                     connection.execute(
@@ -257,7 +257,6 @@ app.post('/register', jsonParser , function (req, res, next) {
             console.log("dateOfFirst:", dateOfFirst);
             var dateOfFirstResult = req.body.patient_visit === 0 ? formattedDate : dateOfFirst;
 
-            // คำนวณ duration หรือจำนวนวันระหว่าง formattedDate กับ dateOfFirstResult
             var duration = calculateDuration(formattedDate, dateOfFirstResult);
 
 
@@ -269,7 +268,7 @@ app.post('/register', jsonParser , function (req, res, next) {
               // หาความแตกต่างระหว่างวันที่เป็นวินาที
               var timeDifferenceInSeconds = endDateInSeconds - startDateInSeconds;
 
-              // แปลงวินาทีเป็นวัน
+              // แปลงวินาทีเป็นวัน (1000 มิลลิวินาที * 60 วินาที * 60 นาที * 24 ชั่วโมง คือจำนวนวินาทีในหนึ่งวัน)
               var duration = timeDifferenceInSeconds / (1000 * 60 * 60 * 24);
 
               // ปัดเศษทิ้ง
@@ -296,7 +295,7 @@ app.post('/register', jsonParser , function (req, res, next) {
                 );
             }
 
-            // Update patient_visit and date in the patient table
+            
             connection.execute(
               'UPDATE patient SET patient_visit = ?, date = ?, date_of_first = ?, duration = ? WHERE patient_HN = ?',
               [patientVisit, formattedDate, dateOfFirstResult, duration, patientHN],
@@ -448,7 +447,7 @@ app.post('/register', jsonParser , function (req, res, next) {
         [patientHN],
         function (err, patients, fields) {
           if (err) {
-            console.error(err); // บันทึกข้อผิดพลาดในฐานข้อมูลเพื่อการดีบัก
+            console.error(err); 
             return res.status(500).json({ status: 'error', message: 'Database error' });
           }
     
@@ -468,7 +467,6 @@ app.post('/register', jsonParser , function (req, res, next) {
             duration: patients[0].duration
           }, secret2);
              
-          // ส่งค่า token2 กลับในการตอบสนอ
           res.json({ status: 'ok', token2: token2 });
         }
       );
@@ -520,28 +518,7 @@ app.post('/register', jsonParser , function (req, res, next) {
 
                   }
               );
-
-              const updateAssessmentStatus = (req, res) =>{
-                  const { rowId, assessment_status } = req.body;
-
-                  connection.execute(
-                    'UPDATE assessment SET assessment_status = ? WHERE assessment_id = ?',
-                    [assessment_status, rowId],
-                    function (err, updateStatusResult, fields) {
-                        if (err) {
-                            console.error(err);
-                            return res.json({ status: 'error', message: 'Row not found' });
-                        }
-                        res.json({ status: 'ok', message: `Assessment status updated successfully.` });
-  
-                    }
-                );  
               }
-
-              }
-            
-
-  
 
               app.get('/patient_info', jsonParser, getPatientInfo);
               app.put('/cancel_treatment/:patient_HN', jsonParser, cancelTreatment);
